@@ -19,7 +19,7 @@ jobs:
 
       - name: Build and Tag Docker Image
         run: |
-          docker build -t migrationdemo:latest -f ../Dockerfile .
+          docker build -t migrationdemo:latest -f $GITHUB_WORKSPACE/Dockerfile $GITHUB_WORKSPACE
           docker tag migrationdemo:latest ${{ secrets.DOCKER_USERNAME }}/migrationdemo:latest
 
       - name: Push Docker Image to Docker Hub
