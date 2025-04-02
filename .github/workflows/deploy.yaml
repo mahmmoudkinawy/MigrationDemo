@@ -25,6 +25,12 @@ jobs:
       - name: Install EF Core CLI
         run: dotnet tool install --global dotnet-ef
 
+      - name: Install SQLCMD
+        run: |
+          # Install SQLCMD (SQL Server Command Line Tool) on Ubuntu
+          sudo apt-get update
+          sudo apt-get install -y mssql-tools unixodbc-dev
+
       - name: Build the Project
         run: dotnet build --configuration Release
 
