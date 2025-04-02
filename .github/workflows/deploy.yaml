@@ -32,7 +32,7 @@ jobs:
         run: dotnet ef migrations bundle --self-contained --runtime linux-x64 -o efbundle
 
       - name: Upload Migration Bundle as Artifact
-        uses: actions/upload-artifact@v3.1.0
+        uses: actions/upload-artifact@v4
         with:
           name: efbundle
           path: efbundle
@@ -46,7 +46,7 @@ jobs:
         run: docker push ${{ secrets.DOCKER_USERNAME }}/migrationdemo:latest
 
       - name: Download Migration Bundle
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: efbundle
           path: .
