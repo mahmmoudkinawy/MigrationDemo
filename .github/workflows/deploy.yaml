@@ -28,14 +28,10 @@ jobs:
       - name: Restore Dependencies
         run: dotnet restore
 
-      - name: Build Migration Bundle
-        run: dotnet ef migrations bundle --self-contained --runtime linux-x64 -o efbundle
-
-      - name: Upload Migration Bundle as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: efbundle
-          path: efbundle
+      - name: Build and Apply Migrations
+        run: |
+          # Apply migrations directly to the database on VPS
+          dotnet ef database update --connection "${{ secrets.DB_CONNECTION_STRING }}" --no-build --no-restore --verbose
 
       - name: Build and Tag Docker Image
         run: |
@@ -44,31 +40,6 @@ jobs:
 
       - name: Push Docker Image to Docker Hub
         run: docker push ${{ secrets.DOCKER_USERNAME }}/migrationdemo:latest
-
-      - name: Download Migration Bundle
-        uses: actions/download-artifact@v4
-        with:
-          name: efbundle
-          path: .
-
-      - name: Copy Migration Bundle to VPS
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          password: ${{ secrets.SERVER_PASSWORD }}
-          source: 'efbundle'
-          target: '/home/${{ secrets.VPS_USER }}/'
-
-      - name: Apply Migrations on VPS
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          password: ${{ secrets.SERVER_PASSWORD }}
-          script: |
-            chmod +x /home/${{ secrets.VPS_USER }}/efbundle
-            /home/${{ secrets.VPS_USER }}/efbundle --connection "${{ secrets.DB_CONNECTION_STRING }}"
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
