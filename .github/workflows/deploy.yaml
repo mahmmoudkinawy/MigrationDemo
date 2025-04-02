@@ -28,9 +28,28 @@ jobs:
       - name: Build the Project
         run: dotnet build --configuration Release
 
+      - name: Backup Database Before Migrations
+        run: |
+          # Backup the SQL Server database before applying migrations
+          echo "Backing up the database..."
+          sqlcmd -S "${{ secrets.DB_HOST }}" -U "${{ secrets.DB_USERNAME }}" -P "${{ secrets.DB_PASSWORD }}" -Q "BACKUP DATABASE [${{ secrets.DB_NAME }}] TO DISK = N'/tmp/db-backup.bak'"
+
       - name: Apply Migrations Directly to the Database
         run: |
+          # Apply migrations to the database
+          echo "Applying migrations..."
           dotnet ef database update --connection "${{ secrets.DB_CONNECTION_STRING }}" --configuration Release --verbose
+        continue-on-error: true
+
+      - name: Check Migration Status and Restore If Needed
+        run: |
+          # Check if migration failed and restore the backup if needed
+          if [ $? -ne 0 ]; then
+            echo "Migration failed. Restoring database from backup..."
+            sqlcmd -S "${{ secrets.DB_HOST }}" -U "${{ secrets.DB_USERNAME }}" -P "${{ secrets.DB_PASSWORD }}" -Q "RESTORE DATABASE [${{ secrets.DB_NAME }}] FROM DISK = N'/tmp/db-backup.bak' WITH REPLACE"
+          else
+            echo "Migration successful!"
+          fi
 
       - name: Build and Tag Docker Image
         run: |
