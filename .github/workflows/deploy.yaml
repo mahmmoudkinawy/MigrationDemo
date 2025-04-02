@@ -30,7 +30,6 @@ jobs:
 
       - name: Build and Apply Migrations
         run: |
-          # Apply migrations directly to the database on VPS
           dotnet ef database update --connection "${{ secrets.DB_CONNECTION_STRING }}" --no-build --no-restore --verbose
 
       - name: Build and Tag Docker Image
