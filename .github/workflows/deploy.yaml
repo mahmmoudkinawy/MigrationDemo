@@ -14,8 +14,28 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0'
+
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Install EF Core CLI
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Restore Dependencies
+        run: dotnet restore
+
+      - name: Build Migration Bundle
+        run: dotnet ef migrations bundle --self-contained --runtime linux-x64 -o efbundle
+
+      - name: Upload Migration Bundle as Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: efbundle
+          path: efbundle
 
       - name: Build and Tag Docker Image
         run: |
@@ -24,6 +44,31 @@ jobs:
 
       - name: Push Docker Image to Docker Hub
         run: docker push ${{ secrets.DOCKER_USERNAME }}/migrationdemo:latest
+
+      - name: Download Migration Bundle
+        uses: actions/download-artifact@v3
+        with:
+          name: efbundle
+          path: .
+
+      - name: Copy Migration Bundle to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          source: 'efbundle'
+          target: '/home/${{ secrets.VPS_USER }}/'
+
+      - name: Apply Migrations on VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            chmod +x /home/${{ secrets.VPS_USER }}/efbundle
+            /home/${{ secrets.VPS_USER }}/efbundle --connection "Server=localhost;Database=YourDatabase;User Id=sa;Password=YourStrongPassword;"
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
