@@ -68,7 +68,7 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
             chmod +x /home/${{ secrets.VPS_USER }}/efbundle
-            /home/${{ secrets.VPS_USER }}/efbundle --connection "${{ secrets.DB_CONNECTION_STRING }}" --output-dir /home/${{ secrets.VPS_USER }}/Migrations --no-build --no-restore --verbose"
+            /home/${{ secrets.VPS_USER }}/efbundle --connection "${{ secrets.DB_CONNECTION_STRING }}" --output-dir /home/${{ secrets.VPS_USER }}/Migrations --no-build --no-restore --verbose
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
